@@ -497,6 +497,8 @@ font-size: 1.3rem;
         }))
       };
 
+      console.log(">>> ORDER SENT:", order);
+
       // Отправка данных заказа в Telegram бота
       Telegram.WebApp.sendData(JSON.stringify(order));
       Telegram.WebApp.close();
