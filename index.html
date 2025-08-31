@@ -487,8 +487,11 @@ height: 30px;
           price: c.Cost
         }))
       };
+
+      console.log("Send data:", order);
       // Отправляем заказ обратно в бота
       Telegram.WebApp.sendData(JSON.stringify(order));
+      Telegram.WebApp.close();
     });
 
     loadProducts();
