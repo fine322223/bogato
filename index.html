@@ -489,6 +489,7 @@ height: 30px;
       };
       // Отправляем заказ обратно в бота
       Telegram.WebApp.sendData(JSON.stringify(order));
+      Telegram.WebbApp.close();
     });
 
     loadProducts();
