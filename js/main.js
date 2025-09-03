@@ -66,6 +66,44 @@
       renderProducts(filtered);
     });
 
+    // Открытие/закрытие сортировки
+    document.getElementById("sort-btn").addEventListener("click", () => {
+      document.getElementById("sort-modal").classList.remove("hidden");
+    });
+    function closeSort() {
+      document.getElementById("sort-modal").classList.add("hidden");
+    }
+
+    // Применение сортировки
+    function applySort(order) {
+      let sorted = [...products];
+      if (order === "asc") {
+        sorted.sort((a, b) => a.Cost - b.Cost);
+      } else if (order === "desc") {
+        sorted.sort((a, b) => b.Cost - a.Cost);
+      }
+      renderProducts(sorted);
+      closeSort();
+    }
+
+    // Открытие/закрытие фильтра
+    document.getElementById("filter-btn").addEventListener("click", () => {
+      document.getElementById("filter-modal").classList.remove("hidden");
+    });
+    function closeFilter() {
+      document.getElementById("filter-modal").classList.add("hidden");
+    }
+
+    // Применение фильтра
+    function applyFilter() {
+      const min = parseFloat(document.getElementById("min-price").value) || 0;
+      const max = parseFloat(document.getElementById("max-price").value) || Infinity;
+
+      const filtered = products.filter(p => p.Cost >= min && p.Cost <= max);
+      renderProducts(filtered);
+      closeFilter();
+    }
+
     // Открытие корзины
     document.getElementById("cart-btn").addEventListener("click", () => {
       const list = document.getElementById("cart-items");

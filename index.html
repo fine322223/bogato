@@ -20,6 +20,33 @@
     <input type="text" id="search" placeholder="Поиск товаров...">
   </div>
   
+  <!-- Кнопки сортировки и фильтра -->
+  <div class="filters">
+    <button id="sort-btn">Сортировать</button>
+    <button id="filter-btn">Фильтр по цене</button>
+  </div>
+
+  <!-- Модальное окно сортировки -->
+  <div id="sort-modal" class="hidden modal">
+    <div class="modal-content">
+      <h3>Сортировка по цене</h3>
+      <button onclick="applySort('asc')">По возрастанию</button>
+      <button onclick="applySort('desc')">По убыванию</button>
+      <button onclick="closeSort()">Закрыть</button>
+    </div>
+  </div>
+
+  <!-- Модальное окно фильтра -->
+  <div id="filter-modal" class="hidden modal">
+    <div class="modal-content">
+      <h3>Фильтр по цене</h3>
+      <input type="number" id="min-price" placeholder="От">
+      <input type="number" id="max-price" placeholder="До">
+      <button onclick="applyFilter()">Применить</button>
+      <button onclick="closeFilter()">Закрыть</button>
+    </div>
+  </div>
+
   <!-- Контейнер для товаров -->
   <div class="products" id="product-list"></div>
   
