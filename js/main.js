@@ -78,11 +78,17 @@
 
     // Подтверждение заказа
     document.getElementById("confirm-order").addEventListener("click", () => {
+      let telegramInput = document.getElementById("telegram").value.trim();
+      // Проверяем ник на наличие @
+      if (telegramInput && !telegramInput.startsWith("@")) {
+        telegramInput = "@" + telegramInput;
+      }
+
       const order = {
-        surname: document.getElementById("surname").value,
         name: document.getElementById("name").value,
         phone: document.getElementById("phone").value,
-        email: document.getElementById("email").value,
+        address: document.getElementById("address").value,
+        telegram: telegramInput,
         cart: cart.map(c => ({
           id: c.ID,
           title: c.Name,
