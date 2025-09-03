@@ -46,6 +46,19 @@
       document.getElementById("cart-count").innerText = cart.length;
     }
 
+    // Удаление товара из корзины
+    function removeFromCart(index) {
+      cart.splice(index, 1); // удаляем товар по индексу
+      document.getElementById("cart-count").innerText = cart.length; // обновляем счётчик
+      const list = document.getElementById("cart-items");
+      list.innerHTML = cart.map((c, i) => `
+        <div class="cart-item">
+          <span>${c.Name} - ${c.Cost} ₽</span>
+          <button class="remove-btn" onclick="removeFromCart(${i})">❌</button>
+        </div>
+      `).join("");
+    }
+
     // Поиск товаров
     document.getElementById("search").addEventListener("input", e => {
       const q = e.target.value.toLowerCase();
@@ -56,7 +69,12 @@
     // Открытие корзины
     document.getElementById("cart-btn").addEventListener("click", () => {
       const list = document.getElementById("cart-items");
-      list.innerHTML = cart.map(c => `<p>${c.ID} — ${c.Name} - ${c.Cost} ₽</p>`).join("");
+      list.innerHTML = cart.map((c, index) => `
+        <div class="cart-item">
+          <span>${c.Name} - ${c.Cost} ₽</span>
+          <button class="remove-btn" onclick="removeFromCart(${index})">❌</button>
+        </div>
+      `).join("");
       document.getElementById("cart-modal").classList.remove("hidden");
     });
 
