@@ -1,3 +1,9 @@
+// Инициализация Telegram WebApp
+if (window.Telegram?.WebApp) {
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+}
+
 // URL для загрузки данных о товарах
     const API_URL = "https://script.google.com/macros/s/AKfycbxmzenU7gOI0DOyUfuJ_gV-l4zwizB4rn8rh07EXeteKv-pcj-WDx62pxdtxrp3j-cskQ/exec";
     let products = [];
@@ -134,28 +140,49 @@
 
     // Подтверждение заказа
     document.getElementById("confirm-order").addEventListener("click", () => {
-      let telegramInput = document.getElementById("telegram").value.trim();
-      // Проверяем ник на наличие @
-      if (telegramInput && !telegramInput.startsWith("@")) {
-        telegramInput = "@" + telegramInput;
-      }
+    // Проверка заполненности полей
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const address = document.getElementById("address").value.trim();
+    const telegram = document.getElementById("telegram").value.trim();
 
-      const order = {
-        name: document.getElementById("name").value,
-        phone: document.getElementById("phone").value,
-        address: document.getElementById("address").value,
+    if (!name || !phone || !address || !telegram) {
+        alert("Пожалуйста, заполните все поля");
+        return;
+    }
+
+    if (cart.length === 0) {
+        alert("Корзина пуста");
+        return;
+    }
+
+    let telegramInput = telegram;
+    // Проверяем ник на наличие @
+    if (telegramInput && !telegramInput.startsWith("@")) {
+        telegramInput = "@" + telegramInput;
+    }
+
+    const order = {
+        name: name,
+        phone: phone,
+        address: address,
         telegram: telegramInput,
         cart: cart.map(c => ({
-          id: c.ID,
-          title: c.Name,
-          price: c.Cost
+            id: c.ID,
+            title: c.Name,
+            price: c.Cost
         }))
-      };
+    };
 
+    console.log("Sending order:", order); // Для отладки
 
-      // Отправка данных заказа в Telegram бота
-      Telegram.WebApp.sendData(JSON.stringify(order));
-      Telegram.WebApp.close();
+    // Отправка данных заказа в Telegram бота
+    if (window.Telegram?.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify(order));
+        Telegram.WebApp.close();
+    } else {
+        alert("Telegram WebApp не доступен");
+    }
     });
 
     // Загрузка товаров при запуске
