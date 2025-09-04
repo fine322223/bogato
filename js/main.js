@@ -4,7 +4,7 @@ if (window.Telegram?.WebApp) {
     Telegram.WebApp.expand();
 }
 
-// URL для загрузки данных о товарах
+    // URL для загрузки данных о товарах
     const API_URL = "https://script.google.com/macros/s/AKfycbxmzenU7gOI0DOyUfuJ_gV-l4zwizB4rn8rh07EXeteKv-pcj-WDx62pxdtxrp3j-cskQ/exec";
     let products = [];
     let cart = [];
