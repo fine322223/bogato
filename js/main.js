@@ -11,9 +11,18 @@ if (window.Telegram?.WebApp) {
 
     // Загрузка товаров с сервера
     async function loadProducts() {
-      const res = await fetch(API_URL);
-      products = await res.json();
-      renderProducts(products);
+        try {
+            const res = await fetch(API_URL);
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            products = await res.json();
+            renderProducts(products);
+        } catch (error) {
+            console.error("Ошибка загрузки товаров:", error);
+            document.getElementById("product-list").innerHTML = 
+                "<p style='text-align:center;width:100%;padding:20px;'>Ошибка загрузки товаров</p>";
+        }
     }
 
     // Отображение товаров на странице
