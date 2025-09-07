@@ -3,6 +3,83 @@ if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 }
+        // === ЛОГГИРОВАНИЕ ДАННЫХ (для отладки) ===
+    function debugLogData(orderData) {
+        console.log("📦 Данные для отправки:", orderData);
+        
+        // Создаем скрытый элемент для копирования
+        const debugDiv = document.createElement('div');
+        debugDiv.style.position = 'fixed';
+        debugDiv.style.top = '10px';
+        debugDiv.style.left = '10px';
+        debugDiv.style.background = 'rgba(0,0,0,0.8)';
+        debugDiv.style.color = 'white';
+        debugDiv.style.padding = '10px';
+        debugDiv.style.borderRadius = '5px';
+        debugDiv.style.zIndex = '9999';
+        debugDiv.style.fontSize = '12px';
+        debugDiv.style.maxWidth = '300px';
+        debugDiv.style.wordBreak = 'break-all';
+        debugDiv.innerHTML = `
+            <strong>Данные для отправки:</strong><br>
+            ${JSON.stringify(orderData, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
+            <br><br>
+            <button onclick="copyDebugData()" style="background: #007bff; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;">
+                Копировать данные
+            </button>
+            <button onclick="this.parentElement.remove()" style="background: #dc3545; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;">
+                Закрыть
+            </button>
+        `;
+        
+        document.body.appendChild(debugDiv);
+    }
+
+    function copyDebugData() {
+        const orderData = {
+            name: document.getElementById("name")?.value || "Test Name",
+            phone: document.getElementById("phone")?.value || "+79990001122",
+            address: document.getElementById("address")?.value || "Test Address",
+            telegram: document.getElementById("telegram")?.value || "@testuser",
+            cart: cart.map(c => ({ id: c.ID, title: c.Name, price: c.Cost }))
+        };
+        
+        navigator.clipboard.writeText(JSON.stringify(orderData, null, 2));
+        alert('Данные скопированы в буфер обмена!');
+    }
+
+    // Добавляем кнопку отладки в интерфейс
+    function addDebugButton() {
+        const debugBtn = document.createElement('button');
+        debugBtn.innerHTML = '🐛 Debug';
+        debugBtn.style.position = 'fixed';
+        debugBtn.style.bottom = '70px';
+        debugBtn.style.right = '10px';
+        debugBtn.style.zIndex = '9998';
+        debugBtn.style.background = '#ffc107';
+        debugBtn.style.color = 'black';
+        debugBtn.style.border = 'none';
+        debugBtn.style.padding = '8px';
+        debugBtn.style.borderRadius = '5px';
+        debugBtn.style.cursor = 'pointer';
+        debugBtn.onclick = () => {
+            const testData = {
+                name: "Test User",
+                phone: "+79990001122", 
+                address: "Moscow, Test Street 1",
+                telegram: "@testuser",
+                cart: [{id: "test1", title: "Test Product", price: 1000}]
+            };
+            debugLogData(testData);
+        };
+        
+        document.body.appendChild(debugBtn);
+    }
+
+    // Инициализация отладки после загрузки
+    setTimeout(addDebugButton, 2000);
+
+      //==============================================
 
     // URL для загрузки данных о товарах
     const API_URL = "https://script.google.com/macros/s/AKfycbxmzenU7gOI0DOyUfuJ_gV-l4zwizB4rn8rh07EXeteKv-pcj-WDx62pxdtxrp3j-cskQ/exec";
@@ -182,6 +259,19 @@ if (window.Telegram?.WebApp) {
             price: c.Cost
         }))
     };
+
+        // === ОТЛАДОЧНЫЙ ВЫВОД ===
+    debugLogData(order);
+    console.log("Отправляемые данные:", order);
+    
+    if (window.Telegram?.WebApp) {
+        Telegram.WebApp.sendData(JSON.stringify(order));
+        Telegram.WebApp.close();
+    } else {
+        alert("Telegram WebApp не доступен");
+        console.log("Данные (имитация отправки):", JSON.stringify(order));
+    }
+    //=================================================================
 
     console.log("Sending order:", order); // Для отладки
 
