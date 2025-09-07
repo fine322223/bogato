@@ -278,7 +278,7 @@ if (window.Telegram?.WebApp) {
     // Отправка данных заказа в Telegram бота
     if (window.Telegram?.WebApp) {
         Telegram.WebApp.sendData(JSON.stringify(order));
-        Telegram.WebApp.close();
+        //Telegram.WebApp.close();
     } else {
         alert("Telegram WebApp не доступен");
     }
