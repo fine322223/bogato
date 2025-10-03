@@ -3,26 +3,87 @@ if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
 }
-    // URL для загрузки данных о товарах
-    const API_URL = "https://script.google.com/macros/s/AKfycbxmzenU7gOI0DOyUfuJ_gV-l4zwizB4rn8rh07EXeteKv-pcj-WDx62pxdtxrp3j-cskQ/exec";
-    let products = [];
-    let cart = [];
 
-    // Загрузка товаров с сервера
-    async function loadProducts() {
-        try {
-            const res = await fetch(API_URL);
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            products = await res.json();
-            renderProducts(products);
-        } catch (error) {
-            console.error("Ошибка загрузки товаров:", error);
-            document.getElementById("product-list").innerHTML = 
-                "<p style='text-align:center;width:100%;padding:20px;'>Ошибка загрузки товаров</p>";
+let products = [];
+let cart = [];
+
+// Ключ для хранения данных в LocalStorage
+const PRODUCTS_STORAGE_KEY = 'bogato_products';
+
+// Загрузка товаров из LocalStorage
+function loadProducts() {
+    try {
+        const storedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+        
+        if (storedProducts) {
+            products = JSON.parse(storedProducts);
+        } else {
+            // Если данных нет, создаем пустой массив
+            products = [];
         }
+        
+        renderProducts(products);
+    } catch (error) {
+        console.error("Ошибка загрузки товаров:", error);
+        products = [];
+        renderProducts(products);
     }
+}
+
+// Сохранение товаров в LocalStorage (используется только для администратора)
+function saveProducts() {
+    try {
+        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    } catch (error) {
+        console.error("Ошибка сохранения товаров:", error);
+    }
+}
+
+// Обработка данных от бота (для администратора)
+// Этот код будет получать команды от бота для управления товарами
+window.addEventListener('message', function(event) {
+    try {
+        const data = event.data;
+        
+        if (data.action === 'ADD_PRODUCT') {
+            // Добавление нового товара
+            const newProduct = {
+                ID: data.product.id || Date.now().toString(),
+                Name: data.product.name,
+                Cost: data.product.price,
+                Picture: data.product.image || ''
+            };
+            products.push(newProduct);
+            saveProducts();
+            renderProducts(products);
+        } else if (data.action === 'UPDATE_PRODUCT') {
+            // Обновление существующего товара
+            const index = products.findIndex(p => p.ID == data.product.id);
+            if (index !== -1) {
+                products[index] = {
+                    ID: data.product.id,
+                    Name: data.product.name,
+                    Cost: data.product.price,
+                    Picture: data.product.image || products[index].Picture
+                };
+                saveProducts();
+                renderProducts(products);
+            }
+        } else if (data.action === 'DELETE_PRODUCT') {
+            // Удаление товара
+            products = products.filter(p => p.ID != data.productId);
+            saveProducts();
+            renderProducts(products);
+        } else if (data.action === 'SET_PRODUCTS') {
+            // Массовая загрузка товаров (для синхронизации)
+            products = data.products;
+            saveProducts();
+            renderProducts(products);
+        }
+    } catch (error) {
+        console.error("Ошибка обработки сообщения:", error);
+    }
+});
 
     // Отображение товаров на странице
     function renderProducts(list) {
@@ -170,6 +231,7 @@ if (window.Telegram?.WebApp) {
         telegramInput = "@" + telegramInput;
     }
 
+    // Формируем данные заказа
     const order = {
         name: name,
         phone: phone,
@@ -182,13 +244,24 @@ if (window.Telegram?.WebApp) {
         }))
     };
 
-    console.log("Sending order:", order); // Для отладки
+    console.log("Отправка заказа:", order);
 
     // Отправка данных заказа в Telegram бота
     if (window.Telegram?.WebApp) {
-        Telegram.WebApp.sendData(JSON.stringify(order));
-        Telegram.WebApp.close();
+        try {
+            // Используем правильный метод отправки данных
+            Telegram.WebApp.sendData(JSON.stringify(order));
+            
+            // Закрываем приложение после отправки
+            setTimeout(() => {
+                Telegram.WebApp.close();
+            }, 100);
+        } catch (error) {
+            console.error("Ошибка отправки данных:", error);
+            alert("Произошла ошибка при отправке заказа");
+        }
     } else {
+        console.error("Telegram WebApp не доступен");
         alert("Telegram WebApp не доступен");
     }
     });
