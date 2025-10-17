@@ -4,5 +4,11 @@
     "name": "Gucci gang",
     "price": 23000.0,
     "image": "https://fine322223.github.io/bogato/images/products/product_2_1760728885.jpg"
+  },
+  {
+    "id": "2",
+    "name": "Gucci",
+    "price": 35000.0,
+    "image": "https://fine322223.github.io/bogato/images/products/product_2_1760729023.jpg"
   }
 ]
