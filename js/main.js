@@ -20,6 +20,9 @@ let cart = [];
 // URL к файлу с товарами на GitHub
 const PRODUCTS_URL = 'https://raw.githubusercontent.com/fine322223/bogato/main/products.json';
 
+// Функция отправки заказа (объявляем заранее)
+let submitOrder;
+
 // Загрузка товаров из JSON файла на GitHub
 async function loadProducts() {
     try {
@@ -174,7 +177,7 @@ async function loadProducts() {
     }
 
     // Функция отправки заказа
-    function submitOrder() {
+    submitOrder = function() {
         console.log("submitOrder вызвана");
         
         // Проверка заполненности полей
