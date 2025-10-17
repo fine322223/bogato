@@ -89,6 +89,7 @@ products = load_products_from_file()
 
 # Состояния для добавления товара
 class AddProduct(StatesGroup):
+    product_id = State()
     name = State()
     price = State()
     image = State()
@@ -271,7 +272,7 @@ async def handle_webapp_data(message: types.Message):
 
 # ============= АДМИНИСТРАТИВНЫЕ ФУНКЦИИ =============
 
-# Добавление товара - шаг 1: запрос названия
+# Добавление товара - шаг 1: запрос ID
 @dp.callback_query(F.data == "add_product")
 async def add_product_start(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
@@ -279,11 +280,33 @@ async def add_product_start(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
     
-    await callback.message.answer("Введите название товара:")
-    await state.set_state(AddProduct.name)
+    # Показываем список существующих ID
+    existing_ids = [p['id'] for p in products]
+    id_list = ", ".join(existing_ids) if existing_ids else "нет товаров"
+    
+    await callback.message.answer(
+        f"📝 Введите ID для нового товара\n\n"
+        f"Существующие ID: {id_list}\n\n"
+        f"💡 ID должен быть уникальным (например: 1, 2, 3 или custom_id)"
+    )
+    await state.set_state(AddProduct.product_id)
     await callback.answer()
 
-# Добавление товара - шаг 2: получение названия, запрос цены
+# Добавление товара - шаг 2: получение ID, запрос названия
+@dp.message(AddProduct.product_id)
+async def add_product_id(message: types.Message, state: FSMContext):
+    product_id = message.text.strip()
+    
+    # Проверяем уникальность ID
+    if any(p['id'] == product_id for p in products):
+        await message.answer(f"❌ ID '{product_id}' уже существует. Введите другой ID:")
+        return
+    
+    await state.update_data(product_id=product_id)
+    await message.answer("Введите название товара:")
+    await state.set_state(AddProduct.name)
+
+# Добавление товара - шаг 3: получение названия, запрос цены
 @dp.message(AddProduct.name)
 async def add_product_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
@@ -307,11 +330,12 @@ async def add_product_price(message: types.Message, state: FSMContext):
     except ValueError:
         await message.answer("❌ Неверный формат цены. Введите число:")
 
-# Добавление товара - шаг 4: получение изображения и сохранение
+# Добавление товара - шаг 5: получение изображения и сохранение
 @dp.message(AddProduct.image)
 async def add_product_image(message: types.Message, state: FSMContext):
     # Получаем все данные
     data = await state.get_data()
+    product_id = data['product_id']
     
     image_url = ''
     
@@ -322,7 +346,6 @@ async def add_product_image(message: types.Message, state: FSMContext):
             photo = message.photo[-1]
             
             # Генерируем уникальное имя файла
-            product_id = str(len(products) + 1)
             timestamp = int(time.time())
             file_name = f"product_{product_id}_{timestamp}.jpg"
             file_path = IMAGES_DIR / file_name
@@ -346,7 +369,7 @@ async def add_product_image(message: types.Message, state: FSMContext):
     
     # Создаем новый товар
     new_product = {
-        'id': str(len(products) + 1),
+        'id': product_id,
         'name': data['name'],
         'price': data['price'],
         'image': image_url
