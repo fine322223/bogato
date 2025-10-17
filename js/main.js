@@ -2,6 +2,10 @@
 if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
+    
+    // Настройка главной кнопки (для мобильных устройств)
+    Telegram.WebApp.MainButton.setText('Оформить заказ');
+    Telegram.WebApp.MainButton.hide();
 }
 
 let products = [];
@@ -203,9 +207,7 @@ async function loadProducts() {
             console.log("Данные отправлены, закрываем приложение...");
             
             // Закрываем приложение после отправки
-            setTimeout(() => {
-                Telegram.WebApp.close();
-            }, 100);
+            Telegram.WebApp.close();
         } catch (error) {
             console.error("Ошибка отправки данных:", error);
             alert("Произошла ошибка при отправке заказа: " + error.message);
