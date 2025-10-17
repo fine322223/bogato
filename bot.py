@@ -148,11 +148,13 @@ async def send_welcome(message: types.Message):
 
 
 # Обработка заказов из WebApp
-@dp.message(F.web_app_data)
+@dp.message(F.content_type == types.ContentType.WEB_APP_DATA)
 async def handle_webapp_data(message: types.Message):
+    logging.info(f"🔔 Получены данные из WebApp от пользователя {message.from_user.id}")
     try:
         # Парсим данные из веб-приложения
         data = json.loads(message.web_app_data.data)
+        logging.info(f"📦 Данные заказа: {data}")
         
         name = data.get("name")
         phone = data.get("phone")
@@ -438,6 +440,14 @@ async def delete_product_confirm(message: types.Message, state: FSMContext):
         )
     
     await state.clear()
+
+
+# Отладочный обработчик для всех сообщений
+@dp.message()
+async def debug_all_messages(message: types.Message):
+    logging.info(f"📨 Получено сообщение: type={message.content_type}, from={message.from_user.id}")
+    if message.web_app_data:
+        logging.info(f"🌐 WebApp данные присутствуют!")
 
 
 # Запуск бота
