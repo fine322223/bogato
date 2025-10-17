@@ -3,9 +3,15 @@ if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
     
-    // Настройка главной кнопки (для мобильных устройств)
-    Telegram.WebApp.MainButton.setText('Оформить заказ');
+    // Настройка главной кнопки
+    Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
     Telegram.WebApp.MainButton.hide();
+    
+    // Обработчик нажатия на MainButton
+    Telegram.WebApp.MainButton.onClick(() => {
+        console.log("MainButton нажата");
+        submitOrder();
+    });
 }
 
 let products = [];
@@ -149,84 +155,80 @@ async function loadProducts() {
     document.getElementById("checkout-btn").addEventListener("click", () => {
       document.getElementById("cart-modal").classList.add("hidden");
       document.getElementById("checkout-modal").classList.remove("hidden");
+      
+      // Показываем MainButton при открытии формы заказа
+      if (window.Telegram?.WebApp) {
+          Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
+          Telegram.WebApp.MainButton.show();
+      }
     });
 
     // Закрытие окна оформления заказа
     function closeCheckout() {
       document.getElementById("checkout-modal").classList.add("hidden");
+      
+      // Скрываем MainButton при закрытии формы
+      if (window.Telegram?.WebApp) {
+          Telegram.WebApp.MainButton.hide();
+      }
     }
 
-    // Подтверждение заказа
-    document.getElementById("confirm-order").addEventListener("click", () => {
-    // Проверка заполненности полей
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const address = document.getElementById("address").value.trim();
-    const telegram = document.getElementById("telegram").value.trim();
+    // Функция отправки заказа
+    function submitOrder() {
+        console.log("submitOrder вызвана");
+        
+        // Проверка заполненности полей
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const address = document.getElementById("address").value.trim();
+        const telegram = document.getElementById("telegram").value.trim();
 
-    if (!name || !phone || !address || !telegram) {
-        alert("Пожалуйста, заполните все поля");
-        return;
-    }
-
-    if (cart.length === 0) {
-        alert("Корзина пуста");
-        return;
-    }
-
-    let telegramInput = telegram;
-    // Проверяем ник на наличие @
-    if (telegramInput && !telegramInput.startsWith("@")) {
-        telegramInput = "@" + telegramInput;
-    }
-
-    // Формируем данные заказа
-    const order = {
-        name: name,
-        phone: phone,
-        address: address,
-        telegram: telegramInput,
-        cart: cart.map(c => ({
-            id: c.id,
-            title: c.name,
-            price: c.price
-        }))
-    };
-
-    console.log("Отправка заказа:", order);
-
-    // Отправка данных заказа в Telegram бота
-    if (window.Telegram?.WebApp) {
-        try {
-            console.log("Telegram WebApp доступен");
-            console.log("Platform:", Telegram.WebApp.platform);
-            
-            // Используем надежный метод - отправка через специальную команду
-            const orderData = btoa(unescape(encodeURIComponent(JSON.stringify(order))));
-            
-            // Закрываем WebApp и отправляем команду боту
-            Telegram.WebApp.close();
-            
-            // Telegram автоматически отправит это как сообщение боту
-            window.Telegram.WebApp.sendData(orderData);
-            
-            console.log("Данные отправлены");
-        } catch (error) {
-            console.error("Ошибка отправки данных:", error);
-            
-            // Запасной вариант - пытаемся через sendData
-            try {
-                Telegram.WebApp.sendData(JSON.stringify(order));
-                setTimeout(() => Telegram.WebApp.close(), 500);
-            } catch (e2) {
-                alert("Произошла ошибка при отправке заказа. Попробуйте снова.");
-            }
+        if (!name || !phone || !address || !telegram) {
+            alert("Пожалуйста, заполните все поля");
+            return;
         }
-    } else {
-        console.error("Telegram WebApp не доступен");
-        alert("Telegram WebApp не доступен");
+
+        if (cart.length === 0) {
+            alert("Корзина пуста");
+            return;
+        }
+
+        let telegramInput = telegram;
+        // Проверяем ник на наличие @
+        if (telegramInput && !telegramInput.startsWith("@")) {
+            telegramInput = "@" + telegramInput;
+        }
+
+        // Формируем данные заказа
+        const order = {
+            name: name,
+            phone: phone,
+            address: address,
+            telegram: telegramInput,
+            cart: cart.map(c => ({
+                id: c.id,
+                title: c.name,
+                price: c.price
+            }))
+        };
+
+        console.log("Отправка заказа:", order);
+
+        // Отправка данных заказа через MainButton (работает на iOS!)
+        if (window.Telegram?.WebApp) {
+            try {
+                console.log("Отправка через Telegram WebApp");
+                Telegram.WebApp.sendData(JSON.stringify(order));
+                console.log("Данные отправлены!");
+            } catch (error) {
+                console.error("Ошибка отправки:", error);
+                alert("Произошла ошибка: " + error.message);
+            }
+        } else {
+            console.error("Telegram WebApp недоступен");
+            alert("Telegram WebApp недоступен");
+        }
     }
-    });
 
     // Загрузка товаров при запуске
     loadProducts();
