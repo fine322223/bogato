@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, types, F
@@ -28,6 +29,10 @@ dp = Dispatcher(storage=storage)
 # Путь к файлу с товарами
 PRODUCTS_FILE = Path(__file__).parent / "products.json"
 PROJECT_DIR = Path(__file__).parent.absolute()  # Полный путь к проекту
+IMAGES_DIR = PROJECT_DIR / "images" / "products"  # Папка для фото товаров
+
+# Создаем папку для изображений если её нет
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
 # Функции для работы с файлом товаров
 def load_products_from_file():
@@ -54,11 +59,12 @@ def save_products_to_file(products):
             # Используем полный путь к проекту
             project_path = str(PROJECT_DIR)
             
-            result = subprocess.run(['git', 'add', 'products.json'], 
+            # Добавляем products.json и все изображения
+            result = subprocess.run(['git', 'add', 'products.json', 'images/'], 
                           cwd=project_path, 
                           capture_output=True, text=True)
             
-            result = subprocess.run(['git', 'commit', '-m', 'Автообновление товаров'], 
+            result = subprocess.run(['git', 'commit', '-m', 'Автообновление товаров и изображений'], 
                           cwd=project_path,
                           capture_output=True, text=True)
             
@@ -290,7 +296,13 @@ async def add_product_price(message: types.Message, state: FSMContext):
     try:
         price = float(message.text)
         await state.update_data(price=price)
-        await message.answer("Отправьте URL изображения товара (или введите 'пропустить'):")
+        await message.answer(
+            "📸 Отправьте фото товара или URL изображения\n\n"
+            "Вы можете:\n"
+            "• Отправить фото (рекомендуется)\n"
+            "• Отправить URL изображения\n"
+            "• Написать 'пропустить' чтобы добавить без фото"
+        )
         await state.set_state(AddProduct.image)
     except ValueError:
         await message.answer("❌ Неверный формат цены. Введите число:")
@@ -298,18 +310,46 @@ async def add_product_price(message: types.Message, state: FSMContext):
 # Добавление товара - шаг 4: получение изображения и сохранение
 @dp.message(AddProduct.image)
 async def add_product_image(message: types.Message, state: FSMContext):
-    image_url = message.text if message.text.lower() != 'пропустить' else ''
-    await state.update_data(image=image_url)
-    
     # Получаем все данные
     data = await state.get_data()
+    
+    image_url = ''
+    
+    # Проверяем, отправил ли пользователь фото
+    if message.photo:
+        try:
+            # Получаем самое большое фото
+            photo = message.photo[-1]
+            
+            # Генерируем уникальное имя файла
+            product_id = str(len(products) + 1)
+            timestamp = int(time.time())
+            file_name = f"product_{product_id}_{timestamp}.jpg"
+            file_path = IMAGES_DIR / file_name
+            
+            # Скачиваем фото
+            await bot.download(photo, destination=file_path)
+            
+            # Формируем URL для веб-приложения
+            image_url = f"https://fine322223.github.io/bogato/images/products/{file_name}"
+            
+            logging.info(f"✅ Фото сохранено: {file_path}")
+            
+        except Exception as e:
+            logging.error(f"Ошибка сохранения фото: {e}")
+            await message.answer(f"❌ Ошибка сохранения фото: {e}")
+            return
+    
+    elif message.text and message.text.lower() != 'пропустить':
+        # Если отправлен текст (URL), используем его
+        image_url = message.text
     
     # Создаем новый товар
     new_product = {
         'id': str(len(products) + 1),
         'name': data['name'],
         'price': data['price'],
-        'image': data['image']
+        'image': image_url
     }
     
     products.append(new_product)
@@ -320,8 +360,8 @@ async def add_product_image(message: types.Message, state: FSMContext):
             f"✅ Товар добавлен и сохранен:\n\n"
             f"Название: {new_product['name']}\n"
             f"Цена: {new_product['price']} ₽\n"
-            f"Изображение: {'Да' if new_product['image'] else 'Нет'}\n\n"
-            f"Товар автоматически появится в магазине!",
+            f"Изображение: {'📸 Фото загружено' if message.photo else ('🔗 URL' if image_url else '❌ Нет')}\n\n"
+            f"Товар автоматически появится в магазине через 2-3 минуты!",
             reply_markup=admin_menu()
         )
     else:
@@ -415,18 +455,50 @@ async def edit_product_value(message: types.Message, state: FSMContext):
     data = await state.get_data()
     product_id = data['product_id']
     field = data['field']
-    new_value = message.text
     
     product = next((p for p in products if p['id'] == product_id), None)
     
+    # Обработка разных типов полей
     if field == 'price':
         try:
-            new_value = float(new_value)
+            new_value = float(message.text)
         except ValueError:
             await message.answer("❌ Неверный формат цены. Попробуйте еще раз:")
             return
+        product[field] = new_value
     
-    product[field] = new_value
+    elif field == 'image':
+        # Если изменяем изображение
+        if message.photo:
+            try:
+                # Получаем самое большое фото
+                photo = message.photo[-1]
+                
+                # Генерируем уникальное имя файла
+                timestamp = int(time.time())
+                file_name = f"product_{product_id}_{timestamp}.jpg"
+                file_path = IMAGES_DIR / file_name
+                
+                # Скачиваем фото
+                await bot.download(photo, destination=file_path)
+                
+                # Формируем URL
+                new_value = f"https://fine322223.github.io/bogato/images/products/{file_name}"
+                product[field] = new_value
+                
+                logging.info(f"✅ Фото обновлено: {file_path}")
+                
+            except Exception as e:
+                logging.error(f"Ошибка сохранения фото: {e}")
+                await message.answer(f"❌ Ошибка сохранения фото: {e}")
+                return
+        else:
+            # Если отправлен текст (URL)
+            product[field] = message.text
+    
+    else:
+        # Для остальных полей (name)
+        product[field] = message.text
     
     # Сохраняем изменения в файл
     if save_products_to_file(products):
