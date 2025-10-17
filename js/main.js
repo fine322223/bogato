@@ -2,16 +2,6 @@
 if (window.Telegram?.WebApp) {
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
-    
-    // Настройка главной кнопки
-    Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
-    Telegram.WebApp.MainButton.hide();
-    
-    // Устанавливаем обработчик ОДИН РАЗ в начале
-    Telegram.WebApp.MainButton.onClick(function() {
-        console.log("🔔 MainButton.onClick сработал!");
-        submitOrder();
-    });
 }
 
 let products = [];
@@ -61,12 +51,21 @@ function submitOrder() {
 
     console.log("Отправка заказа:", order);
 
-    // Отправка данных заказа через MainButton (работает на iOS!)
+    // Отправка данных заказа через WebApp
     if (window.Telegram?.WebApp) {
         try {
             console.log("Отправка через Telegram WebApp");
-            Telegram.WebApp.sendData(JSON.stringify(order));
-            console.log("Данные отправлены!");
+            const jsonData = JSON.stringify(order);
+            console.log("JSON данные:", jsonData);
+            
+            // Отправляем данные и сразу закрываем WebApp
+            Telegram.WebApp.sendData(jsonData);
+            console.log("Данные отправлены, закрываем WebApp...");
+            
+            // Закрываем WebApp через небольшую задержку
+            setTimeout(() => {
+                Telegram.WebApp.close();
+            }, 100);
         } catch (error) {
             console.error("Ошибка отправки:", error);
             alert("Произошла ошибка: " + error.message);
@@ -213,21 +212,16 @@ async function loadProducts() {
       document.getElementById("cart-modal").classList.add("hidden");
       document.getElementById("checkout-modal").classList.remove("hidden");
       
-      // Показываем MainButton при открытии формы заказа
-      if (window.Telegram?.WebApp) {
-          Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
-          Telegram.WebApp.MainButton.show();
+      // Устанавливаем обработчик на кнопку оформления
+      const submitBtn = document.getElementById("submit-order-btn");
+      if (submitBtn) {
+          submitBtn.onclick = submitOrder;
       }
     });
 
     // Закрытие окна оформления заказа
     function closeCheckout() {
       document.getElementById("checkout-modal").classList.add("hidden");
-      
-      // Скрываем MainButton при закрытии формы
-      if (window.Telegram?.WebApp) {
-          Telegram.WebApp.MainButton.hide();
-      }
     }
 
     // Загрузка товаров при запуске
