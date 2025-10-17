@@ -209,13 +209,21 @@ async function loadProducts() {
 
     // Переход к оформлению заказа
     document.getElementById("checkout-btn").addEventListener("click", () => {
+      console.log("Переход к оформлению заказа");
       document.getElementById("cart-modal").classList.add("hidden");
       document.getElementById("checkout-modal").classList.remove("hidden");
       
       // Устанавливаем обработчик на кнопку оформления
       const submitBtn = document.getElementById("submit-order-btn");
+      console.log("Кнопка найдена:", submitBtn);
       if (submitBtn) {
-          submitBtn.onclick = submitOrder;
+          submitBtn.onclick = function() {
+              console.log("🔔 Кнопка нажата!");
+              submitOrder();
+          };
+          console.log("Обработчик установлен на кнопку");
+      } else {
+          console.error("❌ Кнопка submit-order-btn не найдена!");
       }
     });
 
