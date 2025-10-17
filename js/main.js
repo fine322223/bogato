@@ -7,18 +7,18 @@ if (window.Telegram?.WebApp) {
 let products = [];
 let cart = [];
 
-// Ключ для хранения данных в LocalStorage
-const PRODUCTS_STORAGE_KEY = 'bogato_products';
+// URL к файлу с товарами на GitHub
+const PRODUCTS_URL = 'https://raw.githubusercontent.com/fine322223/bogato/main/products.json';
 
-// Загрузка товаров из LocalStorage
-function loadProducts() {
+// Загрузка товаров из JSON файла на GitHub
+async function loadProducts() {
     try {
-        const storedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+        const response = await fetch(PRODUCTS_URL + '?t=' + Date.now()); // Добавляем timestamp для обхода кэша
         
-        if (storedProducts) {
-            products = JSON.parse(storedProducts);
+        if (response.ok) {
+            products = await response.json();
         } else {
-            // Если данных нет, создаем пустой массив
+            console.warn("Файл с товарами не найден, используем пустой массив");
             products = [];
         }
         
@@ -29,61 +29,6 @@ function loadProducts() {
         renderProducts(products);
     }
 }
-
-// Сохранение товаров в LocalStorage (используется только для администратора)
-function saveProducts() {
-    try {
-        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-    } catch (error) {
-        console.error("Ошибка сохранения товаров:", error);
-    }
-}
-
-// Обработка данных от бота (для администратора)
-// Этот код будет получать команды от бота для управления товарами
-window.addEventListener('message', function(event) {
-    try {
-        const data = event.data;
-        
-        if (data.action === 'ADD_PRODUCT') {
-            // Добавление нового товара
-            const newProduct = {
-                ID: data.product.id || Date.now().toString(),
-                Name: data.product.name,
-                Cost: data.product.price,
-                Picture: data.product.image || ''
-            };
-            products.push(newProduct);
-            saveProducts();
-            renderProducts(products);
-        } else if (data.action === 'UPDATE_PRODUCT') {
-            // Обновление существующего товара
-            const index = products.findIndex(p => p.ID == data.product.id);
-            if (index !== -1) {
-                products[index] = {
-                    ID: data.product.id,
-                    Name: data.product.name,
-                    Cost: data.product.price,
-                    Picture: data.product.image || products[index].Picture
-                };
-                saveProducts();
-                renderProducts(products);
-            }
-        } else if (data.action === 'DELETE_PRODUCT') {
-            // Удаление товара
-            products = products.filter(p => p.ID != data.productId);
-            saveProducts();
-            renderProducts(products);
-        } else if (data.action === 'SET_PRODUCTS') {
-            // Массовая загрузка товаров (для синхронизации)
-            products = data.products;
-            saveProducts();
-            renderProducts(products);
-        }
-    } catch (error) {
-        console.error("Ошибка обработки сообщения:", error);
-    }
-});
 
     // Отображение товаров на странице
     function renderProducts(list) {
@@ -100,14 +45,14 @@ window.addEventListener('message', function(event) {
         div.className = "product";
         div.innerHTML = `
           <div class="product-image">
-            <img src="${item.Picture}" alt="${item.Name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjJmMmYyIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIwLjM1ZW0iPk5vIGltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+            <img src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjJmMmYyIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIwLjM1ZW0iPk5vIGltYWdlPC90ZXh0Pjwvc3ZnPg=='">
           </div>
           <div class="product-info">
             <div class="product-details">
-              <h3 class="product-name">${item.Name}</h3>
-              <p class="product-price">${item.Cost} ₽</p>
+              <h3 class="product-name">${item.name}</h3>
+              <p class="product-price">${item.price} ₽</p>
             </div>
-            <button class="add-to-cart" onclick="addToCart('${item.ID}')">+</button>
+            <button class="add-to-cart" onclick="addToCart('${item.id}')">+</button>
           </div>
         `;
         container.appendChild(div);
@@ -116,19 +61,19 @@ window.addEventListener('message', function(event) {
 
     // Добавление товара в корзину
     function addToCart(id) {
-      const item = products.find(p => p.ID == id);
+      const item = products.find(p => p.id == id);
       cart.push(item);
       document.getElementById("cart-count").innerText = cart.length;
     }
 
     // Удаление товара из корзины
     function removeFromCart(index) {
-      cart.splice(index, 1); // удаляем товар по индексу
-      document.getElementById("cart-count").innerText = cart.length; // обновляем счётчик
+      cart.splice(index, 1);
+      document.getElementById("cart-count").innerText = cart.length;
       const list = document.getElementById("cart-items");
       list.innerHTML = cart.map((c, i) => `
         <div class="cart-item">
-          <span>${c.Name} - ${c.Cost} ₽</span>
+          <span>${c.name} - ${c.price} ₽</span>
           <button class="remove-btn" onclick="removeFromCart(${i})">❌</button>
         </div>
       `).join("");
@@ -137,7 +82,7 @@ window.addEventListener('message', function(event) {
     // Поиск товаров
     document.getElementById("search").addEventListener("input", e => {
       const q = e.target.value.toLowerCase();
-      const filtered = products.filter(p => p.Name.toLowerCase().includes(q));
+      const filtered = products.filter(p => p.name.toLowerCase().includes(q));
       renderProducts(filtered);
     });
 
@@ -153,9 +98,9 @@ window.addEventListener('message', function(event) {
     function applySort(order) {
       let sorted = [...products];
       if (order === "asc") {
-        sorted.sort((a, b) => a.Cost - b.Cost);
+        sorted.sort((a, b) => a.price - b.price);
       } else if (order === "desc") {
-        sorted.sort((a, b) => b.Cost - a.Cost);
+        sorted.sort((a, b) => b.price - a.price);
       }
       renderProducts(sorted);
       closeSort();
@@ -174,7 +119,7 @@ window.addEventListener('message', function(event) {
       const min = parseFloat(document.getElementById("min-price").value) || 0;
       const max = parseFloat(document.getElementById("max-price").value) || Infinity;
 
-      const filtered = products.filter(p => p.Cost >= min && p.Cost <= max);
+      const filtered = products.filter(p => p.price >= min && p.price <= max);
       renderProducts(filtered);
       closeFilter();
     }
@@ -184,7 +129,7 @@ window.addEventListener('message', function(event) {
       const list = document.getElementById("cart-items");
       list.innerHTML = cart.map((c, index) => `
         <div class="cart-item">
-          <span>${c.Name} - ${c.Cost} ₽</span>
+          <span>${c.name} - ${c.price} ₽</span>
           <button class="remove-btn" onclick="removeFromCart(${index})">❌</button>
         </div>
       `).join("");
@@ -238,9 +183,9 @@ window.addEventListener('message', function(event) {
         address: address,
         telegram: telegramInput,
         cart: cart.map(c => ({
-            id: c.ID,
-            title: c.Name,
-            price: c.Cost
+            id: c.id,
+            title: c.name,
+            price: c.price
         }))
     };
 
