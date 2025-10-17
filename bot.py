@@ -151,12 +151,26 @@ async def send_welcome(message: types.Message):
 @dp.message(F.content_type == types.ContentType.WEB_APP_DATA)
 async def handle_webapp_data(message: types.Message):
     import time
+    import base64
+    import urllib.parse
+    
     start_time = time.time()
     logging.info(f"🔔 Получены данные из WebApp от пользователя {message.from_user.id}")
     try:
         # Парсим данные из веб-приложения
-        data = json.loads(message.web_app_data.data)
-        logging.info(f"📦 Данные заказа: {data}")
+        raw_data = message.web_app_data.data
+        
+        # Пробуем декодировать base64 (для iOS)
+        try:
+            decoded = base64.b64decode(raw_data).decode('utf-8')
+            decoded = urllib.parse.unquote(decoded)
+            data = json.loads(decoded)
+            logging.info(f"📦 Данные заказа (base64): {data}")
+        except:
+            # Если не base64, то обычный JSON
+            data = json.loads(raw_data)
+            logging.info(f"📦 Данные заказа (JSON): {data}")
+        
         parse_time = time.time()
         logging.info(f"⏱ Парсинг занял: {(parse_time - start_time)*1000:.0f}ms")
         
@@ -183,7 +197,7 @@ async def handle_webapp_data(message: types.Message):
         
         order_text += f"\n💰 <b>Итого:</b> {total} ₽"
         format_time = time.time()
-        logging.info(f"⏱ Форматирование текста: {(format_time - parse_time)*1000:.0f}ms")
+        logging.info(f"⏱ Форматирование: {(format_time - parse_time)*1000:.0f}ms")
 
         # Подтверждение покупателю (СРАЗУ!)
         user_id = message.from_user.id
