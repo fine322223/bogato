@@ -199,15 +199,17 @@ async function loadProducts() {
     if (window.Telegram?.WebApp) {
         try {
             console.log("Telegram WebApp доступен");
-            console.log("QueryID:", Telegram.WebApp.initDataUnsafe?.query_id);
+            console.log("Platform:", Telegram.WebApp.platform);
             
-            // Используем правильный метод отправки данных
+            // Пробуем отправить через sendData (работает на большинстве платформ)
             Telegram.WebApp.sendData(JSON.stringify(order));
             
-            console.log("Данные отправлены, закрываем приложение...");
+            console.log("Данные отправлены через sendData");
             
-            // Закрываем приложение после отправки
-            Telegram.WebApp.close();
+            // Небольшая задержка перед закрытием для iOS
+            setTimeout(() => {
+                Telegram.WebApp.close();
+            }, 300);
         } catch (error) {
             console.error("Ошибка отправки данных:", error);
             alert("Произошла ошибка при отправке заказа: " + error.message);
