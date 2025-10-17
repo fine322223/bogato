@@ -1,7 +1,17 @@
 // Инициализация Telegram WebApp
 if (window.Telegram?.WebApp) {
+    console.log("🚀 Telegram WebApp инициализация");
+    console.log("Версия WebApp:", Telegram.WebApp.version);
+    console.log("Платформа:", Telegram.WebApp.platform);
+    console.log("InitData:", Telegram.WebApp.initData);
+    console.log("IsInline:", Telegram.WebApp.isInline);
+    
     Telegram.WebApp.ready();
     Telegram.WebApp.expand();
+    
+    console.log("✅ WebApp готов к работе");
+} else {
+    console.error("❌ Telegram WebApp недоступен!");
 }
 
 let products = [];
@@ -57,15 +67,24 @@ function submitOrder() {
             console.log("Отправка через Telegram WebApp");
             const jsonData = JSON.stringify(order);
             console.log("JSON данные:", jsonData);
+            console.log("Длина данных:", jsonData.length);
             
-            // Отправляем данные и сразу закрываем WebApp
-            Telegram.WebApp.sendData(jsonData);
-            console.log("Данные отправлены, закрываем WebApp...");
+            // Пробуем отправить через sendData
+            try {
+                Telegram.WebApp.sendData(jsonData);
+                console.log("✅ sendData вызван успешно");
+            } catch (sendError) {
+                console.error("❌ Ошибка sendData:", sendError);
+                // Если sendData не работает, показываем alert
+                alert("sendData не работает: " + sendError.message);
+            }
             
-            // Закрываем WebApp через небольшую задержку
+            // Показываем уведомление и закрываем WebApp
+            console.log("Закрываем WebApp...");
             setTimeout(() => {
                 Telegram.WebApp.close();
-            }, 100);
+            }, 500);
+            
         } catch (error) {
             console.error("Ошибка отправки:", error);
             alert("Произошла ошибка: " + error.message);
