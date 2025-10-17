@@ -4,5 +4,11 @@
     "name": "Balenciaga",
     "price": 87000.0,
     "image": "https://fine322223.github.io/bogato/images/products/product_1_1760729527.jpg"
+  },
+  {
+    "id": "2",
+    "name": "For delete",
+    "price": 1.0,
+    "image": ""
   }
 ]
