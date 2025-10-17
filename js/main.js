@@ -6,6 +6,12 @@ if (window.Telegram?.WebApp) {
     // Настройка главной кнопки
     Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
     Telegram.WebApp.MainButton.hide();
+    
+    // Устанавливаем обработчик ОДИН РАЗ в начале
+    Telegram.WebApp.MainButton.onClick(function() {
+        console.log("🔔 MainButton.onClick сработал!");
+        submitOrder();
+    });
 }
 
 let products = [];
@@ -211,9 +217,6 @@ async function loadProducts() {
       if (window.Telegram?.WebApp) {
           Telegram.WebApp.MainButton.setText('ОФОРМИТЬ ЗАКАЗ');
           Telegram.WebApp.MainButton.show();
-          
-          // Устанавливаем обработчик нажатия
-          Telegram.WebApp.MainButton.onClick(submitOrder);
       }
     });
 
@@ -223,7 +226,6 @@ async function loadProducts() {
       
       // Скрываем MainButton при закрытии формы
       if (window.Telegram?.WebApp) {
-          Telegram.WebApp.MainButton.offClick(submitOrder);
           Telegram.WebApp.MainButton.hide();
       }
     }
