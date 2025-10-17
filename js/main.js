@@ -194,8 +194,13 @@ async function loadProducts() {
     // Отправка данных заказа в Telegram бота
     if (window.Telegram?.WebApp) {
         try {
+            console.log("Telegram WebApp доступен");
+            console.log("QueryID:", Telegram.WebApp.initDataUnsafe?.query_id);
+            
             // Используем правильный метод отправки данных
             Telegram.WebApp.sendData(JSON.stringify(order));
+            
+            console.log("Данные отправлены, закрываем приложение...");
             
             // Закрываем приложение после отправки
             setTimeout(() => {
@@ -203,7 +208,7 @@ async function loadProducts() {
             }, 100);
         } catch (error) {
             console.error("Ошибка отправки данных:", error);
-            alert("Произошла ошибка при отправке заказа");
+            alert("Произошла ошибка при отправке заказа: " + error.message);
         }
     } else {
         console.error("Telegram WebApp не доступен");
