@@ -7,7 +7,7 @@ from pathlib import Path
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -95,25 +95,21 @@ class EditProduct(StatesGroup):
 
 # Главное меню для обычных пользователей
 def user_menu():
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="👜 Открыть магазин",
-            web_app=WebAppInfo(url="https://fine322223.github.io/bogato/")
-        )],
-        [InlineKeyboardButton(
-            text="📞 Техподдержка",
-            url="https://t.me/fine911"
-        )]
-    ])
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(
+                text="👜 Открыть магазин",
+                web_app=WebAppInfo(url="https://fine322223.github.io/bogato/")
+            )],
+            [KeyboardButton(text="📞 Техподдержка")]
+        ],
+        resize_keyboard=True
+    )
     return keyboard
 
 # Меню администратора с дополнительными кнопками управления
 def admin_menu():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="👜 Открыть магазин",
-            web_app=WebAppInfo(url="https://fine322223.github.io/bogato/")
-        )],
         [InlineKeyboardButton(text="➕ Добавить товар", callback_data="add_product")],
         [InlineKeyboardButton(text="✏️ Редактировать товар", callback_data="edit_product")],
         [InlineKeyboardButton(text="❌ Удалить товар", callback_data="delete_product")],
@@ -123,6 +119,20 @@ def admin_menu():
             url="https://t.me/fine911"
         )]
     ])
+    return keyboard
+
+def admin_keyboard():
+    """Обычная клавиатура для админа с WebApp"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(
+                text="👜 Открыть магазин",
+                web_app=WebAppInfo(url="https://fine322223.github.io/bogato/")
+            )],
+            [KeyboardButton(text="⚙️ Управление")]
+        ],
+        resize_keyboard=True
+    )
     return keyboard
 
 
@@ -137,7 +147,7 @@ async def send_welcome(message: types.Message):
             "👋 Привет, Администратор!\n\n"
             "Добро пожаловать в панель управления магазином Bogato Boutique.\n"
             "Используйте кнопки ниже для управления товарами.",
-            reply_markup=admin_menu()
+            reply_markup=admin_keyboard()
         )
     else:
         await message.answer(
@@ -145,6 +155,18 @@ async def send_welcome(message: types.Message):
             "Добро пожаловать в Bogato Boutique - магазин премиальных товаров.",
             reply_markup=user_menu()
         )
+
+# Обработчик кнопки "Управление" для админа
+@dp.message(F.text == "⚙️ Управление")
+async def show_admin_menu(message: types.Message):
+    user_id = message.from_user.id
+    if user_id != ADMIN_ID:
+        return
+    
+    await message.answer(
+        "⚙️ Панель управления:",
+        reply_markup=admin_menu()
+    )
 
 
 # Обработка заказов из WebApp

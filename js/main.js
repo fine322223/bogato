@@ -67,27 +67,18 @@ function submitOrder() {
             console.log("Отправка через Telegram WebApp");
             const jsonData = JSON.stringify(order);
             console.log("JSON данные:", jsonData);
-            console.log("Длина данных:", jsonData.length);
             
-            // Пробуем отправить через sendData
-            try {
-                Telegram.WebApp.sendData(jsonData);
-                console.log("✅ sendData вызван успешно");
-            } catch (sendError) {
-                console.error("❌ Ошибка sendData:", sendError);
-                // Если sendData не работает, показываем alert
-                alert("sendData не работает: " + sendError.message);
-            }
+            // Для iOS: кодируем в base64 и отправляем
+            const base64Data = btoa(unescape(encodeURIComponent(jsonData)));
+            console.log("Base64 данные:", base64Data);
             
-            // Показываем уведомление и закрываем WebApp
-            console.log("Закрываем WebApp...");
-            setTimeout(() => {
-                Telegram.WebApp.close();
-            }, 500);
+            // Отправляем данные
+            Telegram.WebApp.sendData(base64Data);
+            console.log("✅ Данные отправлены!");
             
         } catch (error) {
-            console.error("Ошибка отправки:", error);
-            alert("Произошла ошибка: " + error.message);
+            console.error("❌ Ошибка отправки:", error);
+            alert("Ошибка: " + error.message);
         }
     } else {
         console.error("Telegram WebApp недоступен");
