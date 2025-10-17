@@ -150,11 +150,15 @@ async def send_welcome(message: types.Message):
 # Обработка заказов из WebApp
 @dp.message(F.content_type == types.ContentType.WEB_APP_DATA)
 async def handle_webapp_data(message: types.Message):
+    import time
+    start_time = time.time()
     logging.info(f"🔔 Получены данные из WebApp от пользователя {message.from_user.id}")
     try:
         # Парсим данные из веб-приложения
         data = json.loads(message.web_app_data.data)
         logging.info(f"📦 Данные заказа: {data}")
+        parse_time = time.time()
+        logging.info(f"⏱ Парсинг занял: {(parse_time - start_time)*1000:.0f}ms")
         
         name = data.get("name")
         phone = data.get("phone")
@@ -178,11 +182,10 @@ async def handle_webapp_data(message: types.Message):
             total += item['price']
         
         order_text += f"\n💰 <b>Итого:</b> {total} ₽"
+        format_time = time.time()
+        logging.info(f"⏱ Форматирование текста: {(format_time - parse_time)*1000:.0f}ms")
 
-        # Отправляем заказ в группу продавца
-        await bot.send_message(GROUP_ID, order_text, parse_mode="HTML")
-        
-        # Подтверждение покупателю
+        # Подтверждение покупателю (СРАЗУ!)
         user_id = message.from_user.id
         if user_id == ADMIN_ID:
             await message.answer(
@@ -195,6 +198,17 @@ async def handle_webapp_data(message: types.Message):
                 "Менеджер свяжется с вами в ближайшее время.",
                 reply_markup=user_menu()
             )
+        answer_time = time.time()
+        logging.info(f"⏱ Ответ пользователю: {(answer_time - format_time)*1000:.0f}ms")
+        
+        # Отправляем заказ в группу продавца (в фоне)
+        try:
+            await bot.send_message(GROUP_ID, order_text, parse_mode="HTML")
+            group_time = time.time()
+            logging.info(f"✅ Заказ отправлен в группу за {(group_time - answer_time)*1000:.0f}ms")
+            logging.info(f"⏱ ОБЩЕЕ ВРЕМЯ: {(group_time - start_time)*1000:.0f}ms")
+        except Exception as group_error:
+            logging.error(f"❌ Ошибка отправки в группу: {group_error}")
 
     except Exception as e:
         logging.error(f"Ошибка обработки заказа: {e}")
