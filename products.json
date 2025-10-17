@@ -1,1 +1,8 @@
-[]
+[
+  {
+    "id": "1",
+    "name": "Balenciaga",
+    "price": 87000.0,
+    "image": "https://fine322223.github.io/bogato/images/products/product_1_1760729527.jpg"
+  }
+]
