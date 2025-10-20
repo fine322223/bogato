@@ -630,8 +630,14 @@ async def delete_product_confirm(message: types.Message, state: FSMContext):
                 if product.get('image'):
                     image_path = product['image']
                     # Извлекаем имя файла из пути
-                    if image_path.startswith('images/products/'):
-                        file_name = image_path.replace('images/products/', '')
+                    file_name = None
+                    
+                    # Проверяем разные форматы URL
+                    if 'images/products/' in image_path:
+                        # Извлекаем имя файла из полного URL или относительного пути
+                        file_name = image_path.split('images/products/')[-1]
+                    
+                    if file_name:
                         full_image_path = IMAGES_DIR / file_name
                         
                         # Удаляем файл, если он существует
@@ -642,6 +648,8 @@ async def delete_product_confirm(message: types.Message, state: FSMContext):
                                 logging.info(f"🗑 Удалено изображение: {file_name}")
                             except Exception as e:
                                 logging.error(f"❌ Ошибка удаления изображения {file_name}: {e}")
+                        else:
+                            logging.warning(f"⚠️ Изображение не найдено: {full_image_path}")
                 
                 products.remove(product)
                 deleted_names.append(product['name'])
