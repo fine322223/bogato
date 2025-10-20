@@ -4,5 +4,11 @@
     "name": "Balenciaga",
     "price": 87000.0,
     "image": "https://fine322223.github.io/bogato/images/products/product_1_1760729527.jpg"
+  },
+  {
+    "id": "2",
+    "name": "Balenciaga X Gucci Flora Logo Neo Classic City Bag (F/W 2021)",
+    "price": 100000.0,
+    "image": "https://fine322223.github.io/bogato/images/products/product_2_1760969673.jpg"
   }
 ]
