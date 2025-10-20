@@ -126,6 +126,7 @@ async function loadProducts() {
           <div class="product-info">
             <div class="product-details">
               <h3 class="product-name">${item.name}</h3>
+              ${item.description ? `<p class="product-description">${item.description}</p>` : ''}
               <p class="product-price">${item.price} ₽</p>
             </div>
             <button class="add-to-cart" onclick="addToCart('${item.id}')">+</button>
@@ -241,6 +242,13 @@ async function loadProducts() {
     function closeCheckout() {
       document.getElementById("checkout-modal").classList.add("hidden");
     }
+
+    // Кнопка скрытия клавиатуры
+    document.getElementById("hide-keyboard-btn").addEventListener("click", () => {
+      // Убираем фокус с поля поиска
+      document.getElementById("search").blur();
+      // На мобильных это скроет клавиатуру
+    });
 
     // Загрузка товаров при запуске
     loadProducts();

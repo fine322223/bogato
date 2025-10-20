@@ -56,6 +56,9 @@
     background: transparent;
     box-sizing: border-box;
     position: relative;
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
   
   .search::before {
@@ -70,8 +73,7 @@
   }
   
   .search input {
-    width: 100%;
-    max-width: 100%;
+    flex: 1;
     padding: 16px 20px;
     font-size: 15px;
     border: 2px solid #e0e0e0;
@@ -96,6 +98,31 @@
     text-transform: uppercase;
     font-size: 12px;
     letter-spacing: 0.1em;
+  }
+  
+  .hide-keyboard-btn {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #e0e0e0;
+    background: #ffffff;
+    color: #000000;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .hide-keyboard-btn:hover {
+    background: #000000;
+    color: #ffffff;
+    border-color: #000000;
+  }
+  
+  .hide-keyboard-btn:active {
+    transform: scale(0.95);
   }
   
   
@@ -260,13 +287,23 @@
   }
   
   .product-name {
-    margin: 0 0 12px 0;
+    margin: 0 0 8px 0;
     font-size: 13px;
     font-weight: 500;
     line-height: 1.6;
     color: #000000;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+  }
+  
+  .product-description {
+    margin: 0 0 8px 0;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #666666;
+    letter-spacing: 0.03em;
+    font-style: italic;
   }
   
   .product-price {

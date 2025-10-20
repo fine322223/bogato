@@ -92,6 +92,7 @@ class AddProduct(StatesGroup):
     product_id = State()
     name = State()
     price = State()
+    description = State()
     image = State()
 
 # Состояния для редактирования товара
@@ -313,24 +314,36 @@ async def add_product_name(message: types.Message, state: FSMContext):
     await message.answer("Введите цену товара (только число):")
     await state.set_state(AddProduct.price)
 
-# Добавление товара - шаг 3: получение цены, запрос изображения
+# Добавление товара - шаг 4: получение цены, запрос описания
 @dp.message(AddProduct.price)
 async def add_product_price(message: types.Message, state: FSMContext):
     try:
         price = float(message.text)
         await state.update_data(price=price)
         await message.answer(
-            "📸 Отправьте фото товара или URL изображения\n\n"
-            "Вы можете:\n"
-            "• Отправить фото (рекомендуется)\n"
-            "• Отправить URL изображения\n"
-            "• Написать 'пропустить' чтобы добавить без фото"
+            "📝 Введите описание товара (1-2 строки)\n\n"
+            "Например: Размер М, новое\n"
+            "Или напишите 'пропустить' чтобы добавить без описания"
         )
-        await state.set_state(AddProduct.image)
+        await state.set_state(AddProduct.description)
     except ValueError:
         await message.answer("❌ Неверный формат цены. Введите число:")
 
-# Добавление товара - шаг 5: получение изображения и сохранение
+# Добавление товара - шаг 5: получение описания, запрос изображения
+@dp.message(AddProduct.description)
+async def add_product_description(message: types.Message, state: FSMContext):
+    description = message.text if message.text.lower() != 'пропустить' else ''
+    await state.update_data(description=description)
+    await message.answer(
+        "📸 Отправьте фото товара или URL изображения\n\n"
+        "Вы можете:\n"
+        "• Отправить фото (рекомендуется)\n"
+        "• Отправить URL изображения\n"
+        "• Написать 'пропустить' чтобы добавить без фото"
+    )
+    await state.set_state(AddProduct.image)
+
+# Добавление товара - шаг 6: получение изображения и сохранение
 @dp.message(AddProduct.image)
 async def add_product_image(message: types.Message, state: FSMContext):
     # Получаем все данные
@@ -372,6 +385,7 @@ async def add_product_image(message: types.Message, state: FSMContext):
         'id': product_id,
         'name': data['name'],
         'price': data['price'],
+        'description': data.get('description', ''),
         'image': image_url
     }
     
@@ -383,6 +397,7 @@ async def add_product_image(message: types.Message, state: FSMContext):
             f"✅ Товар добавлен и сохранен:\n\n"
             f"Название: {new_product['name']}\n"
             f"Цена: {new_product['price']} ₽\n"
+            f"Описание: {new_product['description'] if new_product['description'] else '❌ Нет'}\n"
             f"Изображение: {'📸 Фото загружено' if message.photo else ('🔗 URL' if image_url else '❌ Нет')}\n\n"
             f"Товар автоматически появится в магазине через 2-3 минуты!",
             reply_markup=admin_menu()
@@ -453,7 +468,8 @@ async def edit_product_select(message: types.Message, state: FSMContext):
         f"Что хотите изменить?\n"
         f"1 - Название\n"
         f"2 - Цена\n"
-        f"3 - Изображение"
+        f"3 - Описание\n"
+        f"4 - Изображение"
     )
     await state.set_state(EditProduct.edit_field)
 
@@ -462,14 +478,20 @@ async def edit_product_select(message: types.Message, state: FSMContext):
 async def edit_product_field(message: types.Message, state: FSMContext):
     field = message.text
     
-    if field not in ['1', '2', '3']:
-        await message.answer("❌ Неверный выбор. Введите 1, 2 или 3:")
+    if field not in ['1', '2', '3', '4']:
+        await message.answer("❌ Неверный выбор. Введите 1, 2, 3 или 4:")
         return
     
-    field_name = {'1': 'name', '2': 'price', '3': 'image'}[field]
+    field_name = {'1': 'name', '2': 'price', '3': 'description', '4': 'image'}[field]
     await state.update_data(field=field_name)
     
-    await message.answer(f"Введите новое значение:")
+    prompt = "Введите новое значение:"
+    if field == '3':
+        prompt = "Введите новое описание (или 'пропустить' чтобы удалить):"
+    elif field == '4':
+        prompt = "Отправьте новое фото или URL:"
+    
+    await message.answer(prompt)
     await state.set_state(EditProduct.new_value)
 
 # Редактирование товара - шаг 4: получение нового значения
@@ -489,6 +511,13 @@ async def edit_product_value(message: types.Message, state: FSMContext):
             await message.answer("❌ Неверный формат цены. Попробуйте еще раз:")
             return
         product[field] = new_value
+    
+    elif field == 'description':
+        # Если редактируем описание
+        if message.text.lower() == 'пропустить':
+            product[field] = ''
+        else:
+            product[field] = message.text
     
     elif field == 'image':
         # Если изменяем изображение
