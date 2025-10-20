@@ -109,11 +109,20 @@ def user_menu():
             [KeyboardButton(
                 text="👜 Открыть магазин",
                 web_app=WebAppInfo(url="https://fine322223.github.io/bogato/")
-            )],
-            [KeyboardButton(text="📞 Техподдержка")]
+            )]
         ],
         resize_keyboard=True
     )
+    return keyboard
+
+# Inline-кнопка техподдержки для обычных пользователей
+def user_support_button():
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="📞 Техподдержка",
+            url="https://t.me/fine911"
+        )]
+    ])
     return keyboard
 
 # Меню администратора с дополнительными кнопками управления
@@ -164,6 +173,11 @@ async def send_welcome(message: types.Message):
             "Добро пожаловать в Bogato Boutique - магазин премиальных товаров.",
             reply_markup=user_menu()
         )
+        # Отправляем кнопку техподдержки отдельным сообщением
+        await message.answer(
+            "По всем вопросам:",
+            reply_markup=user_support_button()
+        )
 
 # Обработчик кнопки "Управление" для админа
 @dp.message(F.text == "⚙️ Управление")
@@ -175,24 +189,6 @@ async def show_admin_menu(message: types.Message):
     await message.answer(
         "⚙️ Панель управления:",
         reply_markup=admin_menu()
-    )
-
-# Обработчик кнопки "Техподдержка" для обычных пользователей
-@dp.message(F.text == "📞 Техподдержка")
-async def show_support(message: types.Message):
-    support_keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text="💬 Написать в поддержку",
-            url="https://t.me/fine911"
-        )]
-    ])
-    
-    await message.answer(
-        "📞 <b>Техподдержка</b>\n\n"
-        "По всем вопросам обращайтесь к нашему менеджеру.\n"
-        "Мы ответим вам в ближайшее время!",
-        parse_mode="HTML",
-        reply_markup=support_keyboard
     )
 
 
@@ -261,6 +257,11 @@ async def handle_webapp_data(message: types.Message):
                 "✅ Ваш заказ успешно оформлен!\n"
                 "Менеджер свяжется с вами в ближайшее время.",
                 reply_markup=user_menu()
+            )
+            # Отправляем кнопку техподдержки
+            await message.answer(
+                "По всем вопросам:",
+                reply_markup=user_support_button()
             )
         answer_time = time.time()
         logging.info(f"⏱ Ответ пользователю: {(answer_time - format_time)*1000:.0f}ms")
