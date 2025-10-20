@@ -17,7 +17,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 API_TOKEN = "7957824215:AAFXeeA8H7ElTOEAW5NGilydtwQkPFcMBu8"
 GROUP_ID = -1003062619878  # ID группы продавца
 # Список ID администраторов (можно добавить несколько)
-ADMIN_IDS = [5186803258]  # !!! ВАЖНО: Добавьте ID администраторов (узнать можно у @userinfobot)
+ADMIN_IDS = [5186803258, 467876266]  # !!! ВАЖНО: Добавьте ID администраторов (узнать можно у @userinfobot)
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -175,6 +175,24 @@ async def show_admin_menu(message: types.Message):
     await message.answer(
         "⚙️ Панель управления:",
         reply_markup=admin_menu()
+    )
+
+# Обработчик кнопки "Техподдержка" для обычных пользователей
+@dp.message(F.text == "📞 Техподдержка")
+async def show_support(message: types.Message):
+    support_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text="💬 Написать в поддержку",
+            url="https://t.me/fine911"
+        )]
+    ])
+    
+    await message.answer(
+        "📞 <b>Техподдержка</b>\n\n"
+        "По всем вопросам обращайтесь к нашему менеджеру.\n"
+        "Мы ответим вам в ближайшее время!",
+        parse_mode="HTML",
+        reply_markup=support_keyboard
     )
 
 
