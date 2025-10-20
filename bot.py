@@ -16,7 +16,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 # Токен бота и ID группы для заказов
 API_TOKEN = "7957824215:AAFXeeA8H7ElTOEAW5NGilydtwQkPFcMBu8"
 GROUP_ID = -1003062619878  # ID группы продавца
-ADMIN_ID = 5186803258  # !!! ВАЖНО: Замените на ваш Telegram ID (узнать можно у @userinfobot)
+# Список ID администраторов (можно добавить несколько)
+ADMIN_IDS = [5186803258]  # !!! ВАЖНО: Добавьте ID администраторов (узнать можно у @userinfobot)
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -150,7 +151,7 @@ async def send_welcome(message: types.Message):
     user_id = message.from_user.id
     
     # Проверяем, является ли пользователь администратором
-    if user_id == ADMIN_ID:
+    if user_id in ADMIN_IDS:
         await message.answer(
             "👋 Привет, Администратор!\n\n"
             "Добро пожаловать в панель управления магазином Bogato Boutique.\n"
@@ -168,7 +169,7 @@ async def send_welcome(message: types.Message):
 @dp.message(F.text == "⚙️ Управление")
 async def show_admin_menu(message: types.Message):
     user_id = message.from_user.id
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         return
     
     await message.answer(
@@ -207,7 +208,8 @@ async def handle_webapp_data(message: types.Message):
         name = data.get("name")
         phone = data.get("phone")
         address = data.get("address")
-        telegram = data.get("telegram")
+        # Автоматически получаем username из Telegram
+        telegram = f"@{message.from_user.username}" if message.from_user.username else data.get("telegram", "Не указан")
         cart = data.get("cart", [])
 
         # Формируем текст заказа
@@ -231,7 +233,7 @@ async def handle_webapp_data(message: types.Message):
 
         # Подтверждение покупателю (СРАЗУ!)
         user_id = message.from_user.id
-        if user_id == ADMIN_ID:
+        if user_id in ADMIN_IDS:
             await message.answer(
                 "✅ Заказ успешно оформлен!",
                 reply_markup=admin_menu()
@@ -257,7 +259,7 @@ async def handle_webapp_data(message: types.Message):
     except Exception as e:
         logging.error(f"Ошибка обработки заказа: {e}")
         user_id = message.from_user.id
-        menu = admin_menu() if user_id == ADMIN_ID else user_menu()
+        menu = admin_menu() if user_id in ADMIN_IDS else user_menu()
         await message.answer(
             "❌ Произошла ошибка при оформлении заказа. Попробуйте еще раз.",
             reply_markup=menu
@@ -270,7 +272,7 @@ async def handle_webapp_data(message: types.Message):
 @dp.callback_query(F.data == "add_product")
 async def add_product_start(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
     
@@ -407,7 +409,7 @@ async def add_product_image(message: types.Message, state: FSMContext):
 @dp.callback_query(F.data == "list_products")
 async def list_products(callback: types.CallbackQuery):
     user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
     
@@ -428,7 +430,7 @@ async def list_products(callback: types.CallbackQuery):
 @dp.callback_query(F.data == "edit_product")
 async def edit_product_start(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
     
@@ -567,7 +569,7 @@ async def edit_product_value(message: types.Message, state: FSMContext):
 @dp.callback_query(F.data == "delete_product")
 async def delete_product_start(callback: types.CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
+    if user_id not in ADMIN_IDS:
         await callback.answer("❌ Доступ запрещен", show_alert=True)
         return
     
@@ -599,12 +601,30 @@ async def delete_product_confirm(message: types.Message, state: FSMContext):
         
         deleted_count = 0
         deleted_names = []
+        deleted_images = []
         not_found = []
         
         for product_id in ids:
             product = next((p for p in products if p['id'] == product_id), None)
             
             if product:
+                # Удаляем изображение товара, если оно есть
+                if product.get('image'):
+                    image_path = product['image']
+                    # Извлекаем имя файла из пути
+                    if image_path.startswith('images/products/'):
+                        file_name = image_path.replace('images/products/', '')
+                        full_image_path = IMAGES_DIR / file_name
+                        
+                        # Удаляем файл, если он существует
+                        if full_image_path.exists():
+                            try:
+                                full_image_path.unlink()
+                                deleted_images.append(file_name)
+                                logging.info(f"🗑 Удалено изображение: {file_name}")
+                            except Exception as e:
+                                logging.error(f"❌ Ошибка удаления изображения {file_name}: {e}")
+                
                 products.remove(product)
                 deleted_names.append(product['name'])
                 deleted_count += 1
@@ -619,6 +639,9 @@ async def delete_product_confirm(message: types.Message, state: FSMContext):
                 else:
                     result_text = f"✅ Удалено товаров: {deleted_count}\n\n"
                     result_text += "Удаленные товары:\n" + "\n".join(f"• {name}" for name in deleted_names)
+                
+                if deleted_images:
+                    result_text += f"\n\n🗑 Удалено изображений: {len(deleted_images)}"
                 
                 if not_found:
                     result_text += f"\n\n⚠️ Не найдены ID: {', '.join(not_found)}"

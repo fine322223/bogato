@@ -28,9 +28,8 @@ function submitOrder() {
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
-    const telegram = document.getElementById("telegram").value.trim();
 
-    if (!name || !phone || !address || !telegram) {
+    if (!name || !phone || !address) {
         alert("Пожалуйста, заполните все поля");
         return;
     }
@@ -40,18 +39,11 @@ function submitOrder() {
         return;
     }
 
-    let telegramInput = telegram;
-    // Проверяем ник на наличие @
-    if (telegramInput && !telegramInput.startsWith("@")) {
-        telegramInput = "@" + telegramInput;
-    }
-
-    // Формируем данные заказа
+    // Формируем данные заказа (telegram будет подставлен автоматически на сервере)
     const order = {
         name: name,
         phone: phone,
         address: address,
-        telegram: telegramInput,
         cart: cart.map(c => ({
             id: c.id,
             title: c.name,
