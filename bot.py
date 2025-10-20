@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -101,11 +101,6 @@ class EditProduct(StatesGroup):
     edit_field = State()
     new_value = State()
 
-# Состояния для массовых операций
-class BulkOperations(StatesGroup):
-    bulk_add = State()
-    bulk_delete = State()
-
 # Главное меню для обычных пользователей
 def user_menu():
     keyboard = ReplyKeyboardMarkup(
@@ -124,10 +119,8 @@ def user_menu():
 def admin_menu():
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="➕ Добавить товар", callback_data="add_product")],
-        [InlineKeyboardButton(text="📦 Массовое добавление", callback_data="bulk_add")],
         [InlineKeyboardButton(text="✏️ Редактировать товар", callback_data="edit_product")],
         [InlineKeyboardButton(text="❌ Удалить товар", callback_data="delete_product")],
-        [InlineKeyboardButton(text="🗑 Массовое удаление", callback_data="bulk_delete")],
         [InlineKeyboardButton(text="📋 Список товаров", callback_data="list_products")],
         [InlineKeyboardButton(
             text="📞 Техподдержка",
@@ -583,162 +576,24 @@ async def delete_product_start(callback: types.CallbackQuery, state: FSMContext)
         await callback.answer()
         return
     
-    text = "🗑 Введите ID товара для удаления:\n\n"
-    for p in products:
-        text += f"ID: {p['id']} - {p['name']}\n"
-    
-    await callback.message.answer(text)
-    await state.set_state("delete_product_id")
-    await callback.answer()
-
-# Удаление товара - шаг 2: подтверждение и удаление
-@dp.message(F.text, lambda msg: msg.text.isdigit())
-async def delete_product_confirm(message: types.Message, state: FSMContext):
-    current_state = await state.get_state()
-    
-    if current_state != "delete_product_id":
-        return
-    
-    product_id = message.text
-    product = next((p for p in products if p['id'] == product_id), None)
-    
-    if not product:
-        await message.answer("❌ Товар не найден. Попробуйте еще раз:")
-        return
-    
-    products.remove(product)
-    
-    # Сохраняем изменения в файл
-    if save_products_to_file(products):
-        await message.answer(
-            f"✅ Товар удален и изменения сохранены:\n{product['name']}",
-            reply_markup=admin_menu()
-        )
-    else:
-        await message.answer(
-            "❌ Ошибка сохранения изменений",
-            reply_markup=admin_menu()
-        )
-    
-    await state.clear()
-
-
-# ============= МАССОВЫЕ ОПЕРАЦИИ =============
-
-# Массовое добавление - начало
-@dp.callback_query(F.data == "bulk_add")
-async def bulk_add_start(callback: types.CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
-        await callback.answer("❌ Доступ запрещен", show_alert=True)
-        return
-    
-    await callback.message.answer(
-        "📦 <b>Массовое добавление товаров</b>\n\n"
-        "Отправьте товары в формате (каждый товар с новой строки):\n"
-        "<code>Название | Цена | URL изображения</code>\n\n"
-        "Пример:\n"
-        "<code>Vivienne Westwood Bag | 23000 | https://example.com/1.jpg\n"
-        "Chanel Perfume | 15000 | https://example.com/2.jpg\n"
-        "Gucci Belt | 18000 | https://example.com/3.jpg</code>\n\n"
-        "Можно отправить без URL (просто название и цена):\n"
-        "<code>Товар 1 | 5000\n"
-        "Товар 2 | 7000</code>",
-        parse_mode="HTML"
-    )
-    await state.set_state(BulkOperations.bulk_add)
-    await callback.answer()
-
-# Массовое добавление - обработка
-@dp.message(BulkOperations.bulk_add)
-async def bulk_add_process(message: types.Message, state: FSMContext):
-    try:
-        lines = message.text.strip().split('\n')
-        added_count = 0
-        errors = []
-        
-        for i, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line:
-                continue
-                
-            parts = [p.strip() for p in line.split('|')]
-            
-            if len(parts) < 2:
-                errors.append(f"Строка {i}: неверный формат")
-                continue
-            
-            name = parts[0]
-            try:
-                price = float(parts[1])
-            except ValueError:
-                errors.append(f"Строка {i}: неверная цена '{parts[1]}'")
-                continue
-            
-            image = parts[2] if len(parts) > 2 else ''
-            
-            # Создаем новый товар
-            new_product = {
-                'id': str(len(products) + 1),
-                'name': name,
-                'price': price,
-                'image': image
-            }
-            
-            products.append(new_product)
-            added_count += 1
-        
-        # Сохраняем изменения
-        if added_count > 0:
-            if save_products_to_file(products):
-                result_text = f"✅ Успешно добавлено товаров: {added_count}"
-                if errors:
-                    result_text += f"\n\n⚠️ Ошибки ({len(errors)}):\n" + "\n".join(errors)
-                await message.answer(result_text, reply_markup=admin_menu())
-            else:
-                await message.answer("❌ Ошибка сохранения", reply_markup=admin_menu())
-        else:
-            await message.answer(
-                "❌ Не удалось добавить ни одного товара\n\n" + "\n".join(errors),
-                reply_markup=admin_menu()
-            )
-        
-    except Exception as e:
-        await message.answer(f"❌ Ошибка: {e}", reply_markup=admin_menu())
-    
-    await state.clear()
-
-
-# Массовое удаление - начало
-@dp.callback_query(F.data == "bulk_delete")
-async def bulk_delete_start(callback: types.CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    if user_id != ADMIN_ID:
-        await callback.answer("❌ Доступ запрещен", show_alert=True)
-        return
-    
-    if not products:
-        await callback.message.answer("❌ Нет товаров для удаления", reply_markup=admin_menu())
-        await callback.answer()
-        return
-    
-    text = "🗑 <b>Массовое удаление товаров</b>\n\n"
+    text = "🗑 <b>Удаление товаров</b>\n\n"
     text += "Список товаров:\n\n"
     for p in products:
         text += f"ID: {p['id']} - {p['name']}\n"
     
-    text += "\n<b>Введите ID товаров для удаления через запятую</b>\n"
-    text += "Например: <code>1,3,5</code> или <code>1, 2, 3</code>"
+    text += "\n<b>Введите ID товаров для удаления</b>\n"
+    text += "Можно удалить один товар: <code>5</code>\n"
+    text += "Или несколько через запятую: <code>1,3,5</code> или <code>1, 2, 3</code>"
     
     await callback.message.answer(text, parse_mode="HTML")
-    await state.set_state(BulkOperations.bulk_delete)
+    await state.set_state("delete_product_id")
     await callback.answer()
 
-# Массовое удаление - обработка
-@dp.message(BulkOperations.bulk_delete)
-async def bulk_delete_process(message: types.Message, state: FSMContext):
+# Удаление товара - шаг 2: подтверждение и удаление
+@dp.message(F.text, StateFilter("delete_product_id"))
+async def delete_product_confirm(message: types.Message, state: FSMContext):
     try:
-        # Парсим ID из сообщения
+        # Парсим ID из сообщения (поддержка одного или нескольких ID)
         ids_text = message.text.strip()
         ids = [id.strip() for id in ids_text.split(',')]
         
@@ -759,8 +614,11 @@ async def bulk_delete_process(message: types.Message, state: FSMContext):
         # Сохраняем изменения
         if deleted_count > 0:
             if save_products_to_file(products):
-                result_text = f"✅ Удалено товаров: {deleted_count}\n\n"
-                result_text += "Удаленные товары:\n" + "\n".join(f"• {name}" for name in deleted_names)
+                if deleted_count == 1:
+                    result_text = f"✅ Товар удален: {deleted_names[0]}"
+                else:
+                    result_text = f"✅ Удалено товаров: {deleted_count}\n\n"
+                    result_text += "Удаленные товары:\n" + "\n".join(f"• {name}" for name in deleted_names)
                 
                 if not_found:
                     result_text += f"\n\n⚠️ Не найдены ID: {', '.join(not_found)}"
