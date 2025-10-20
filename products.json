@@ -5,12 +5,5 @@
     "price": 87000.0,
     "image": "https://fine322223.github.io/bogato/images/products/product_1_1760729527.jpg",
     "description": "Размер: 50 x 38 x 16 см"
-  },
-  {
-    "id": "2",
-    "name": "Гусси",
-    "price": 3728283.0,
-    "description": "Нереальный роскош",
-    "image": "https://fine322223.github.io/bogato/images/products/product_2_1760981694.jpg"
   }
 ]
