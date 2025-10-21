@@ -12,5 +12,12 @@
     "price": 90000.0,
     "description": "Размер: 50 x 38 x 16 см \n\nОтличное состояние!",
     "image": "https://fine322223.github.io/bogato/images/products/product_2_1761007694.jpg"
+  },
+  {
+    "id": "3",
+    "name": "Balenciaga X Gucci Flora Logo Neo Classic City Bag (F/W 2021)",
+    "price": 100000.0,
+    "description": "Размер: 37 x 24 x 13 см\n\nАбсолютно новая!\nПолный комплект",
+    "image": "https://fine322223.github.io/bogato/images/products/product_3_1761007751.jpg"
   }
 ]
