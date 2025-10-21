@@ -536,6 +536,19 @@ async def edit_product_value(message: types.Message, state: FSMContext):
         # Если изменяем изображение
         if message.photo:
             try:
+                # Удаляем старое изображение, если оно есть
+                old_image = product.get('image', '')
+                if old_image and 'images/products/' in old_image:
+                    old_file_name = old_image.split('images/products/')[-1]
+                    old_file_path = IMAGES_DIR / old_file_name
+                    
+                    if old_file_path.exists():
+                        try:
+                            old_file_path.unlink()
+                            logging.info(f"🗑 Удалено старое изображение: {old_file_name}")
+                        except Exception as e:
+                            logging.error(f"❌ Ошибка удаления старого изображения: {e}")
+                
                 # Получаем самое большое фото
                 photo = message.photo[-1]
                 
