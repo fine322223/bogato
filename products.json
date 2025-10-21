@@ -5,5 +5,12 @@
     "price": 60000.0,
     "description": "Размер: 41 x 33 x 17 см \n\nИдеальное состояние!",
     "image": "https://fine322223.github.io/bogato/images/products/product_1_1761007377.jpg"
+  },
+  {
+    "id": "2",
+    "name": "Balenciaga Brown Leather Classic Weekender Bag (F/W 2011)",
+    "price": 90000.0,
+    "description": "Размер: 50 x 38 x 16 см \n\nОтличное состояние!",
+    "image": "https://fine322223.github.io/bogato/images/products/product_2_1761007694.jpg"
   }
 ]
