@@ -160,6 +160,10 @@
     font-size: 12px;
     position: relative;
     transition: all 0.2s ease;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .filters button::before {
@@ -670,12 +674,13 @@
     
     .filters {
       padding: 0 16px 16px;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
+      justify-content: center;
     }
     
     .filters button {
-      width: 100%;
+      flex: 1;
       max-width: 200px;
     }
     
