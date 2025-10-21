@@ -13,11 +13,18 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 
-# Токен бота и ID группы для заказов
-API_TOKEN = "7957824215:AAFXeeA8H7ElTOEAW5NGilydtwQkPFcMBu8"
-GROUP_ID = -1003062619878  # ID группы продавца
-# Список ID администраторов (можно добавить несколько)
-ADMIN_IDS = [5186803258, 467876266]  # !!! ВАЖНО: Добавьте ID администраторов (узнать можно у @userinfobot)
+# Загрузка переменных окружения
+from dotenv import load_dotenv
+load_dotenv()
+
+# ============= НАСТРОЙКИ =============
+API_TOKEN = os.getenv("API_TOKEN")
+GROUP_ID = int(os.getenv("GROUP_ID", "-4923899055"))
+ADMIN_IDS = [int(id.strip()) for id in os.getenv("ADMIN_IDS", "5186803258,467876266").split(",") if id.strip()]
+
+# Проверка наличия токена
+if not API_TOKEN:
+    raise ValueError("❌ API_TOKEN не найден! Создайте файл .env с токеном бота")
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
