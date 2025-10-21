@@ -130,8 +130,11 @@
   .filters {
     padding: 0 20px 30px;
     display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     gap: 16px;
     justify-content: center;
+    align-items: center;
     position: relative;
   }
   
@@ -674,14 +677,16 @@
     
     .filters {
       padding: 0 16px 16px;
-      flex-direction: row;
+      flex-direction: row !important;
       align-items: center;
       justify-content: center;
+      flex-wrap: nowrap;
     }
     
     .filters button {
-      flex: 1;
-      max-width: 200px;
+      flex: 0 1 auto;
+      max-width: 48%;
+      min-width: 120px;
     }
     
     .modal-content {
